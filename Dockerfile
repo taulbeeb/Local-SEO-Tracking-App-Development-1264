@@ -44,7 +44,7 @@ RUN groupadd -r pptruser && useradd -r -g pptruser -G audio,video pptruser \
 USER pptruser
 
 # Expose your app's port
-EXPOSE 3001
+EXPOSE 4173
 
 # Start the server
-CMD ["npm", "run", "server"]
+CMD ["npm", "run", "preview"]
