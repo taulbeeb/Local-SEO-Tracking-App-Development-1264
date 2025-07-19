@@ -59,6 +59,9 @@ app.use(express.json());
 // API Routes
 app.use('/api/serp', serpRoutes);
 app.use('/api/tracking', trackingRoutes);
+app.get('/', (req, res) => {
+  res.send('App is running 🚀');
+});
 
 // Health check
 app.get('/api/health', (req, res) => {

@@ -46,5 +46,5 @@ USER pptruser
 # Expose your app's port
 EXPOSE 8080
 
-# Start the server
-CMD ["npm", "run", "preview"]
+# ✅ Start the Express backend (not Vite preview)
+CMD ["npm", "run", "server"]
