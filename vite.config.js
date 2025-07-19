@@ -17,8 +17,8 @@ export default defineConfig({
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom', 'react-router-dom', 'framer-motion'],
-          chart: ['echarts', 'echarts-for-react'],
-          map: ['leaflet', 'react-leaflet']
+          icons: ['react-icons'],
+          supabase: ['@supabase/supabase-js']
         }
       }
     }

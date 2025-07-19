@@ -1,40 +1,31 @@
-# Use Node 20 slim as the base image
-FROM node:20-slim
+FROM node:18-slim
 
-# Skip Puppeteer's Chromium download – we'll use our own Chrome install
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-
-# Install required packages and Google Chrome
+# Install necessary packages for Puppeteer
 RUN apt-get update \
-    && apt-get install -y wget gnupg ca-certificates \
+    && apt-get install -y wget gnupg \
     && wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-    && sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google.list' \
+    && sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
     && apt-get update \
-    && apt-get install -y \
-        google-chrome-stable \
-        fonts-ipafont-gothic \
-        fonts-wqy-zenhei \
-        fonts-thai-tlwg \
-        fonts-kacst \
-        fonts-freefont-ttf \
-        libxss1 \
-        --no-install-recommends \
+    && apt-get install -y google-chrome-stable fonts-ipafont-gothic fonts-wqy-zenhei fonts-thai-tlwg fonts-kacst fonts-freefont-ttf libxss1 \
+      --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
-# Create and set working directory
+# Create app directory
 WORKDIR /usr/src/app
 
-# Copy package files and install production dependencies
+# Copy package files
 COPY package*.json ./
-RUN npm ci
 
-# Copy app source code
+# Install dependencies
+RUN npm ci --only=production
+
+# Copy app source
 COPY . .
 
 # Build the frontend
 RUN npm run build
 
-# Create non-root Puppeteer user for better security
+# Create non-root user for security
 RUN groupadd -r pptruser && useradd -r -g pptruser -G audio,video pptruser \
     && mkdir -p /home/pptruser/Downloads \
     && chown -R pptruser:pptruser /home/pptruser \
@@ -43,8 +34,8 @@ RUN groupadd -r pptruser && useradd -r -g pptruser -G audio,video pptruser \
 # Switch to non-root user
 USER pptruser
 
-# Expose your app's port
+# Expose port
 EXPOSE 3001
 
-# ✅ Start the Express backend (not Vite preview)
+# Start the application
 CMD ["npm", "run", "server"]

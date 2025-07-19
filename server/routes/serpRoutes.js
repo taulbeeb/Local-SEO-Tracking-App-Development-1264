@@ -35,8 +35,8 @@ router.post('/track', async (req, res) => {
       clientId
     }, priority);
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       jobId: job.id,
       message: 'Tracking job added to queue'
     });
@@ -86,10 +86,10 @@ router.post('/schedule-all/:clientId', async (req, res) => {
       }
     }
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: `Scheduled ${jobCount} tracking jobs`,
-      jobCount 
+      jobCount
     });
   } catch (error) {
     console.error('Error scheduling client tracking:', error);

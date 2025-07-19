@@ -73,7 +73,10 @@ const SerpTestModal = ({ isOpen, onClose }) => {
                     Keyword
                   </label>
                   <div className="relative">
-                    <SafeIcon icon={FiSearch} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <SafeIcon
+                      icon={FiSearch}
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                    />
                     <input
                       type="text"
                       value={keyword}
@@ -90,7 +93,10 @@ const SerpTestModal = ({ isOpen, onClose }) => {
                       Location Name
                     </label>
                     <div className="relative">
-                      <SafeIcon icon={FiMapPin} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <SafeIcon
+                        icon={FiMapPin}
+                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                      />
                       <input
                         type="text"
                         value={location.name}
@@ -100,6 +106,7 @@ const SerpTestModal = ({ isOpen, onClose }) => {
                       />
                     </div>
                   </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Latitude (Optional)
@@ -113,6 +120,7 @@ const SerpTestModal = ({ isOpen, onClose }) => {
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Longitude (Optional)

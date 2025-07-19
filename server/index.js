@@ -24,49 +24,47 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Security middleware - Adjusted CSP for Railway deployment
+// Security middleware with adjusted CSP for Railway deployment
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https:", "http:"],
+      connectSrc: ["'self'", "https://eoiwbbsclzhvckgaftgs.supabase.co", "wss://eoiwbbsclzhvckgaftgs.supabase.co"],
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-      imgSrc: ["'self'", "data:", "https:", "http:"],
-      connectSrc: ["'self'", "https:", "http:", "wss:", "ws:"],
-      fontSrc: ["'self'", "https:", "http:", "data:"],
-      objectSrc: ["'none'"],
-      mediaSrc: ["'self'", "https:", "http:"],
-      frameSrc: ["'self'", "https:", "http:"]
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      fontSrc: ["'self'", "data:", "https:"],
+      formAction: ["'self'"],
+      frameAncestors: ["'none'"]
     }
-  }
+  },
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: false
 }));
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP'
+  windowMs: 15 * 60 * 1000,
+  max: 100
 });
 
 app.use(limiter);
 app.use(cors({
-  origin: '*', // During development/testing, allow all origins
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://your-production-domain.com'] 
+    : ['http://localhost:5173', 'http://localhost:3000'],
+  credentials: true
 }));
 app.use(express.json());
 
 // API Routes
 app.use('/api/serp', serpRoutes);
 app.use('/api/tracking', trackingRoutes);
-app.get('/', (req, res) => {
-  res.send('App is running 🚀');
-});
 
-// Health check
+// Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ 
-    status: 'healthy', 
+    status: 'healthy',
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV || 'development'
   });
@@ -74,37 +72,21 @@ app.get('/api/health', (req, res) => {
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
-  // Ensure the path to dist is correct
   const distPath = path.join(__dirname, '../dist');
-  console.log(`Serving static files from: ${distPath}`);
+  console.log('Serving static files from:', distPath);
   
   app.use(express.static(distPath));
   
+  // Handle client-side routing
   app.get('*', (req, res) => {
     res.sendFile(path.join(distPath, 'index.html'));
   });
 }
 
-// Schedule automated tracking
-cron.schedule('0 6 * * *', async () => {
-  console.log('Starting daily SERP tracking...');
-  try {
-    await queueService.scheduleAllTracking();
-    console.log('Daily tracking scheduled successfully');
-  } catch (error) {
-    console.error('Error scheduling daily tracking:', error);
-  }
-});
-
 // Start server
 const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-});
-
-// Improved error handling for server
-server.on('error', (error) => {
-  console.error('Server error:', error);
 });
 
 // Graceful shutdown
@@ -128,13 +110,4 @@ process.on('SIGINT', async () => {
   });
 });
 
-// Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
-  console.error('Uncaught exception:', error);
-  // Keep the process alive but log the error
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  // Keep the process alive but log the error
-});
+export default app;

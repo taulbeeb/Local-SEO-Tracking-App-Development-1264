@@ -1,6 +1,7 @@
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import cheerio from 'cheerio';
+import supabase from '../lib/supabase.js';
 
 puppeteer.use(StealthPlugin());
 
@@ -8,68 +9,56 @@ class SerpService {
   constructor() {
     this.browser = null;
     this.isInitialized = false;
-    this.initializationPromise = null;
   }
 
   async initialize() {
-    // Prevent multiple simultaneous initializations
-    if (this.initializationPromise) {
-      return this.initializationPromise;
-    }
-    
-    if (this.isInitialized && this.browser) return Promise.resolve();
+    if (this.isInitialized && this.browser) return;
 
-    this.initializationPromise = new Promise(async (resolve, reject) => {
-      try {
-        console.log('Initializing Puppeteer browser...');
-        
-        const launchOptions = {
-          headless: 'new',
-          args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-first-run',
-            '--no-zygote',
-            '--single-process',
-            '--disable-gpu'
-          ]
-        };
-        
-        // Check if we're in Railway environment (with custom Chromium path)
-        if (process.env.PUPPETEER_EXECUTABLE_PATH) {
-          console.log(`Using custom Chromium at: ${process.env.PUPPETEER_EXECUTABLE_PATH}`);
-          launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
-        }
-        
-        this.browser = await puppeteer.launch(launchOptions);
-        this.isInitialized = true;
-        console.log('Puppeteer browser initialized successfully');
-        resolve();
-      } catch (error) {
-        console.error('Failed to initialize browser:', error);
-        this.initializationPromise = null;
-        reject(error);
+    try {
+      console.log('Initializing Puppeteer browser...');
+      
+      const launchOptions = {
+        headless: 'new',
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-accelerated-2d-canvas',
+          '--no-first-run',
+          '--no-zygote',
+          '--single-process',
+          '--disable-gpu'
+        ]
+      };
+
+      // Use custom Chromium path in production (Railway)
+      if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+        console.log(`Using custom Chromium at: ${process.env.PUPPETEER_EXECUTABLE_PATH}`);
+        launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
       }
-    });
-    
-    return this.initializationPromise;
+
+      this.browser = await puppeteer.launch(launchOptions);
+      this.isInitialized = true;
+      console.log('Browser initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize browser:', error);
+      throw error;
+    }
   }
 
-  async searchGoogle(keyword, location, options = {}) {
+  async searchGoogle(keyword, location) {
     await this.initialize();
     
     const page = await this.browser.newPage();
     
     try {
-      console.log(`Starting Google search for: ${keyword} in ${location.name || 'unspecified location'}`);
+      console.log(`Searching for: ${keyword} in ${location.name}`);
       
-      // Set viewport and user agent
+      // Configure page
       await page.setViewport({ width: 1366, height: 768 });
       await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
 
-      // Set location if provided
+      // Set geolocation if provided
       if (location.lat && location.lng) {
         await page.setGeolocation({
           latitude: parseFloat(location.lat),
@@ -82,30 +71,19 @@ class SerpService {
       const locationQuery = location.name ? encodeURIComponent(location.name) : '';
       const searchUrl = `https://www.google.com/search?q=${searchQuery}&near=${locationQuery}&num=100`;
 
-      console.log(`Navigating to: ${searchUrl}`);
-
-      // Navigate to Google search
-      await page.goto(searchUrl, { 
-        waitUntil: 'networkidle2',
-        timeout: 30000 
-      });
-
-      // Wait for results
+      // Navigate and wait for results
+      await page.goto(searchUrl, { waitUntil: 'networkidle2', timeout: 30000 });
       await page.waitForSelector('#search', { timeout: 10000 });
-      console.log('Search results loaded');
 
       // Get page content
       const content = await page.content();
       
       // Parse results
-      console.log('Parsing search results');
       const results = this.parseSearchResults(content, keyword, location);
       
-      console.log(`Found ${results.organic.length} organic results and ${results.mapPack.length} map pack results`);
       return results;
-
     } catch (error) {
-      console.error('Error during Google search:', error);
+      console.error('Search error:', error);
       throw error;
     } finally {
       await page.close();
@@ -116,7 +94,7 @@ class SerpService {
     const $ = cheerio.load(html);
     const results = {
       keyword,
-      location: location.name || 'unknown',
+      location: location.name,
       timestamp: new Date().toISOString(),
       organic: [],
       mapPack: [],
@@ -132,7 +110,7 @@ class SerpService {
 
       if (title && url && !url.startsWith('/search')) {
         results.organic.push({
-          position: results.organic.length + 1,
+          position: index + 1,
           title,
           url: url.startsWith('/url?') ? this.extractUrlFromGoogle(url) : url,
           snippet,
@@ -189,13 +167,11 @@ class SerpService {
     if (this.browser) {
       try {
         await this.browser.close();
+        this.browser = null;
+        this.isInitialized = false;
         console.log('Browser closed successfully');
       } catch (error) {
         console.error('Error closing browser:', error);
-      } finally {
-        this.browser = null;
-        this.isInitialized = false;
-        this.initializationPromise = null;
       }
     }
   }
