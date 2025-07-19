@@ -44,7 +44,7 @@ RUN groupadd -r pptruser && useradd -r -g pptruser -G audio,video pptruser \
 USER pptruser
 
 # Expose your app's port
-EXPOSE 8080
+EXPOSE 3001
 
 # ✅ Start the Express backend (not Vite preview)
 CMD ["npm", "run", "server"]
