@@ -5,17 +5,17 @@ import supabaseService from './supabaseService.js';
 class QueueService {
   constructor() {
     try {
-      // Configure Redis connection
-      const redisConfig = process.env.REDIS_URL ? 
-        process.env.REDIS_URL : 
-        {
-          host: process.env.REDIS_HOST || 'localhost',
-          port: process.env.REDIS_PORT || 6379,
-          password: process.env.REDIS_PASSWORD
-        };
+      // Configure Redis connection with fallback for Railway
+      const redisConfig = process.env.REDIS_URL 
+        ? process.env.REDIS_URL 
+        : {
+            host: process.env.REDIS_HOST || 'localhost',
+            port: process.env.REDIS_PORT || 6379,
+            password: process.env.REDIS_PASSWORD
+          };
 
       console.log('Initializing Redis connection for queue service');
-      
+
       // Create queue with error handling
       this.serpQueue = new Bull('serp-tracking', {
         redis: redisConfig,
@@ -29,7 +29,7 @@ class QueueService {
           }
         }
       });
-      
+
       console.log('Queue initialized successfully');
       this.setupQueueProcessors();
       this.setupQueueEvents();
@@ -83,7 +83,7 @@ class QueueService {
     this.serpQueue.on('stalled', (job) => {
       console.warn(`Job ${job.id} stalled`);
     });
-    
+
     this.serpQueue.on('error', (error) => {
       console.error('Queue error:', error);
     });
@@ -99,7 +99,6 @@ class QueueService {
       };
 
       const job = await this.serpQueue.add('track-keyword', keywordData, jobOptions);
-      
       console.log(`Added tracking job ${job.id} for keyword: ${keywordData.keyword}`);
       return job;
     } catch (error) {
@@ -117,7 +116,6 @@ class QueueService {
       
       for (const pair of trackingPairs) {
         await this.addTrackingJob(pair, 'normal');
-        
         // Add small delay between job additions to prevent overwhelming
         await new Promise(resolve => setTimeout(resolve, 100));
       }

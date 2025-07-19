@@ -1,11 +1,8 @@
 // Frontend service to communicate with SERP API
 class SerpApiService {
   constructor() {
-    // Use absolute paths to ensure consistent resolution in all environments
-    this.baseUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-      ? 'http://localhost:3001/api'
-      : '/api';
-    
+    // Use relative paths for API calls
+    this.baseUrl = '/api';
     console.log('SerpAPI initialized with baseUrl:', this.baseUrl);
   }
 
@@ -42,7 +39,7 @@ class SerpApiService {
       const response = await fetch(`${this.baseUrl}/serp/queue-stats`, {
         credentials: 'include'
       });
-      
+
       if (!response.ok) {
         throw new Error(`Failed to get queue stats: ${response.status}`);
       }

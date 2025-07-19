@@ -4,8 +4,8 @@ import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
 import MetricCard from '../components/MetricCard';
 import RankingChart from '../components/RankingChart';
-import LocationMap from '../components/LocationMap';
 import RecentActivity from '../components/RecentActivity';
+import QueueStatsWidget from '../components/QueueStatsWidget';
 
 const { FiTrendingUp, FiMapPin, FiSearch, FiTarget } = FiIcons;
 
@@ -77,12 +77,13 @@ const Dashboard = () => {
         >
           <RankingChart />
         </motion.div>
+        
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
-          <LocationMap />
+          <QueueStatsWidget />
         </motion.div>
       </div>
 

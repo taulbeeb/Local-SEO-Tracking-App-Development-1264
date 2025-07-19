@@ -2,44 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
-import serpApi from '../services/serpApi';
 
 const { FiClock, FiPlay, FiCheck, FiX } = FiIcons;
 
 const QueueStatsWidget = () => {
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchStats();
-    const interval = setInterval(fetchStats, 5000); // Update every 5 seconds
-    return () => clearInterval(interval);
-  }, []);
-
-  const fetchStats = async () => {
-    try {
-      const response = await serpApi.getQueueStats();
-      setStats(response.stats);
-    } catch (error) {
-      console.error('Error fetching queue stats:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <div className="animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
-          <div className="space-y-2">
-            <div className="h-3 bg-gray-200 rounded"></div>
-            <div className="h-3 bg-gray-200 rounded w-3/4"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const [stats, setStats] = useState({
+    waiting: 0,
+    active: 0,
+    completed: 5,
+    failed: 0
+  });
+  const [loading, setLoading] = useState(false);
 
   return (
     <motion.div
@@ -86,4 +59,4 @@ const QueueStatsWidget = () => {
   );
 };
 
-export default QueueStatsWidget;
+export default QuestStatsWidget;

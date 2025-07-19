@@ -5,14 +5,6 @@ import rateLimit from 'express-rate-limit';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
-import cron from 'node-cron';
-
-// Import services
-import serpService from './services/serpService.js';
-import queueService from './services/queueService.js';
-import supabaseService from './services/supabaseService.js';
-
-// Routes
 import serpRoutes from './routes/serpRoutes.js';
 import trackingRoutes from './routes/trackingRoutes.js';
 
@@ -24,7 +16,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Security middleware with adjusted CSP for Railway deployment
+// Security middleware
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -51,13 +43,13 @@ const limiter = rateLimit({
 app.use(limiter);
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://your-production-domain.com'] 
+    ? true // Allow all origins in production for now
     : ['http://localhost:5173', 'http://localhost:3000'],
   credentials: true
 }));
 app.use(express.json());
 
-// API Routes
+// API routes
 app.use('/api/serp', serpRoutes);
 app.use('/api/tracking', trackingRoutes);
 
@@ -66,8 +58,14 @@ app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'healthy',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    version: '1.0.0'
   });
+});
+
+// Basic API routes
+app.get('/api/test', (req, res) => {
+  res.json({ message: 'API is working!' });
 });
 
 // Serve static files in production
@@ -79,31 +77,30 @@ if (process.env.NODE_ENV === 'production') {
   
   // Handle client-side routing
   app.get('*', (req, res) => {
+    if (req.url.startsWith('/api')) {
+      return res.status(404).json({ error: 'API endpoint not found' });
+    }
     res.sendFile(path.join(distPath, 'index.html'));
   });
 }
 
 // Start server
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
 // Graceful shutdown
-process.on('SIGTERM', async () => {
+process.on('SIGTERM', () => {
   console.log('SIGTERM received, shutting down gracefully');
-  await serpService.close();
-  await queueService.close();
   server.close(() => {
     console.log('Server closed');
     process.exit(0);
   });
 });
 
-process.on('SIGINT', async () => {
+process.on('SIGINT', () => {
   console.log('SIGINT received, shutting down gracefully');
-  await serpService.close();
-  await queueService.close();
   server.close(() => {
     console.log('Server closed');
     process.exit(0);

@@ -1,7 +1,6 @@
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import cheerio from 'cheerio';
-import supabase from '../lib/supabase.js';
 
 puppeteer.use(StealthPlugin());
 
@@ -48,12 +47,11 @@ class SerpService {
 
   async searchGoogle(keyword, location) {
     await this.initialize();
-    
     const page = await this.browser.newPage();
-    
+
     try {
       console.log(`Searching for: ${keyword} in ${location.name}`);
-      
+
       // Configure page
       await page.setViewport({ width: 1366, height: 768 });
       await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
@@ -77,10 +75,9 @@ class SerpService {
 
       // Get page content
       const content = await page.content();
-      
+
       // Parse results
       const results = this.parseSearchResults(content, keyword, location);
-      
       return results;
     } catch (error) {
       console.error('Search error:', error);
@@ -124,7 +121,7 @@ class SerpService {
       const $element = $(element);
       const title = $element.find('.dbg0pd').text().trim();
       const address = $element.find('.rllt__details div:last-child').text().trim();
-      
+
       if (title) {
         results.mapPack.push({
           position: index + 1,
